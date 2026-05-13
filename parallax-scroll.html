@@ -767,6 +767,7 @@
       function getElements(slide) {
         return {
           bg: slide.querySelector(".slide__bg"),
+          num: slide.querySelector(".slide__number"),
           title: slide.querySelector(".slide__title"),
           para: slide.querySelector(".slide__para"),
           btn: slide.querySelector(".slide__btn"),
@@ -809,9 +810,9 @@
       // direction: 1 = scrolling down (entering from top)
       //           -1 = scrolling up  (entering from bottom)
       function enterSlide(slide, direction) {
-        const { bg, title, para, btn } = getElements(slide);
+        const { bg, num, title, para, btn } = getElements(slide);
 
-        gsap.killTweensOf([bg, title, para, btn]);
+        gsap.killTweensOf([bg, num, title, para, btn]);
         stopIdleThunder();
 
         // 1. Background — fade in with a gentle scale-down
@@ -832,7 +833,10 @@
           setTimeout(() => startIdleThunder(slide), 2100);
         }, 820);
 
-        // 3. Title + Para — from above (down ↓ entering)
+        // 3. Slide number — fade in
+        gsap.fromTo(num, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out", delay: 0.1 });
+
+        // 4. Title + Para — from above (down ↓ entering)
         const textFrom = direction === 1 ? -70 : 70;
 
         gsap.fromTo(
@@ -846,7 +850,7 @@
           { y: 0, opacity: 1, duration: 0.75, ease: "power3.out", delay: 0.25 },
         );
 
-        // 4. Button — from left →
+        // 5. Button — from left →
         gsap.fromTo(
           btn,
           { x: -90, opacity: 0 },
@@ -858,9 +862,9 @@
       // direction: 1 = slide exiting upward (scroll down)
       //           -1 = slide exiting downward (scroll up)
       function exitSlide(slide, direction) {
-        const { bg, title, para, btn } = getElements(slide);
+        const { bg, num, title, para, btn } = getElements(slide);
 
-        gsap.killTweensOf([bg, title, para, btn]);
+        gsap.killTweensOf([bg, num, title, para, btn]);
         stopIdleThunder();
 
         // 1. Background — fade out with a slight scale-up (receding feel)
@@ -888,7 +892,10 @@
           delay: 0.05,
         });
 
-        // 3. Button — exit to right →
+        // 3. Slide number — fade out
+        gsap.to(num, { opacity: 0, duration: 0.3, ease: "power2.in" });
+
+        // 4. Button — exit to right →
         gsap.to(btn, { x: 90, opacity: 0, duration: 0.45, ease: "power2.in" });
       }
 
@@ -900,8 +907,9 @@
 
       // ─── Initial reset — all slides hidden ─────────────────────
       slides.forEach((slide) => {
-        const { bg, title, para, btn } = getElements(slide);
+        const { bg, num, title, para, btn } = getElements(slide);
         gsap.set(bg, { opacity: 0, scale: 1.08 });
+        gsap.set(num, { opacity: 0 });
         gsap.set(title, { y: -70, opacity: 0 });
         gsap.set(para, { y: -50, opacity: 0 });
         gsap.set(btn, { x: -90, opacity: 0 });
