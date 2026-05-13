@@ -2,7 +2,7 @@
 
 A cinematic, scroll-driven parallax experience built with **pure HTML, CSS, and GSAP ScrollTrigger**. No frameworks. No build tools. Just open and scroll.
 
-<img src="./assets/gif/recording.gif" alt="Parallax Scroll Preview" width="900" />
+<img src="https://github.com/malakasandakalw/thundering-parallax/blob/main/assets/gif/recording.gif" alt="Parallax Scroll Preview" width="900" />
 
 ---
 
@@ -52,8 +52,7 @@ parallax-scroll/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/malakasandakalw/parallax-scroll.git](https://github.com/malakasandakalw/thundering-parallax.git
-   ```
+   git clone https://github.com/malakasandakalw/parallax-scroll.git ```
 
 2. **Open in a browser**
 
