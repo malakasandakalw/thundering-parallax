@@ -2,7 +2,7 @@
 
 A cinematic, scroll-driven parallax experience built with **pure HTML, CSS, and GSAP ScrollTrigger**. No frameworks. No build tools. Just open and scroll.
 
-![Parallax Scroll Preview](./assets/images/preview.png)
+<img src="./assets/gif/recording.gif" alt="Parallax Scroll Preview" width="900" />
 
 ---
 
