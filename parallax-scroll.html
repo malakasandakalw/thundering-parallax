@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parallax Scroll — Sticky Section</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- GSAP + ScrollTrigger CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <!-- Lenis smooth scroll -->
+    <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
+
+    <style>
+      /* ─── RESET & BASE ─────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --slide-duration: 0.7s;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --ease-in: cubic-bezier(0.64, 0, 0.78, 0);
+
+        --accent-1: #e8c547;
+        --accent-2: #ff6b6b;
+        --accent-3: #4ecdc4;
+      }
+
+      html {
+        scroll-behavior: auto;
+      }
+
+      body {
+        background: #0a0a0a;
+        color: #fff;
+        font-family: "DM Sans", sans-serif;
+        overflow-x: hidden;
+      }
+
+      /* ─── INTRO / OUTRO SECTIONS ───────────────────────────── */
+      .intro,
+      .outro {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem;
+        position: relative;
+      }
+
+      .intro {
+        background: linear-gradient(160deg, #0d0d0d 0%, #1a1a2e 100%);
+      }
+
+      .outro {
+        background: linear-gradient(160deg, #1a1a2e 0%, #0d0d0d 100%);
+      }
+
+      .intro-label {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(3rem, 8vw, 7rem);
+        letter-spacing: 0.04em;
+        line-height: 0.9;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(135deg, #fff 30%, #aaa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .intro p {
+        font-size: 1.1rem;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.5);
+        max-width: 420px;
+        line-height: 1.7;
+        margin-bottom: 2.5rem;
+      }
+
+      /* ─── INTRO AUTHOR ──────────────────────────────────────── */
+      .intro-author {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 2.5rem;
+      }
+
+      .intro-author__by {
+        font-size: 1rem;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.3);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .intro-author__name {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 1.6rem;
+        letter-spacing: 0.1em;
+        color: #934ecd;
+      }
+
+      .intro-author__links {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        margin-left: 0.3rem;
+      }
+
+      .intro-author__links a {
+        display: inline-flex;
+        color: rgba(255, 255, 255, 0.3);
+        transition: color 0.25s ease;
+        text-decoration: none;
+      }
+
+      .intro-author__links a:hover {
+        color: #fff;
+      }
+
+      .intro-author__links a svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+      }
+
+      .scroll-hint {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.75rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+
+      .scroll-hint .arrow {
+        width: 1px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.2);
+        position: relative;
+        animation: pulse-line 1.8s ease-in-out infinite;
+      }
+
+      @keyframes pulse-line {
+        0%,
+        100% {
+          opacity: 0.2;
+          transform: scaleY(1);
+        }
+        50% {
+          opacity: 0.8;
+          transform: scaleY(1.15);
+        }
+      }
+
+      /* ─── PARALLAX WRAPPER ─────────────────────────────────── */
+      /* height = 300vh so each slide owns 100vh of scroll */
+      #parallax-wrapper {
+        height: 300vh;
+        position: relative;
+      }
+
+      /* ─── STICKY STAGE ─────────────────────────────────────── */
+      #parallax-stage {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      /* ─── SLIDE ────────────────────────────────────────────── */
+      .slide {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      /* ─── BACKGROUND IMAGE LAYER ───────────────────────────── */
+      .slide__bg {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        transform: scale(1.08); /* slight scale for parallax feel */
+        opacity: 0;
+        will-change: transform, opacity;
+        z-index: 0;
+      }
+
+      /* Thunder — fires AFTER bg is fully visible */
+      @keyframes thunder {
+        0% {
+          filter: brightness(1);
+        }
+        6% {
+          filter: brightness(6);
+        }
+        12% {
+          filter: brightness(1);
+        }
+        20% {
+          filter: brightness(5);
+        }
+        26% {
+          filter: brightness(1);
+        }
+        33% {
+          filter: brightness(7);
+        }
+        40% {
+          filter: brightness(1);
+        }
+        48% {
+          filter: brightness(3.5);
+        }
+        65% {
+          filter: brightness(1.3);
+        }
+        100% {
+          filter: brightness(1);
+        }
+      }
+
+      /* Single idle flash while staying on slide */
+      @keyframes idle-flash {
+        0% {
+          filter: brightness(1);
+        }
+        8% {
+          filter: brightness(6);
+        }
+        16% {
+          filter: brightness(1);
+        }
+        26% {
+          filter: brightness(5);
+        }
+        34% {
+          filter: brightness(1);
+        }
+        100% {
+          filter: brightness(1);
+        }
+      }
+
+      .slide__bg.anim-thunder {
+        animation: thunder 2s var(--ease-out) forwards;
+      }
+
+      .slide__bg.anim-idle-flash {
+        animation: idle-flash 1.2s ease forwards;
+      }
+
+      /* individual slide backgrounds */
+      .slide--1 .slide__bg {
+        background-image:
+          linear-gradient(
+            35deg,
+            rgba(10, 10, 10, 0.15) 0%,
+            rgba(10, 10, 10, 0.35) 100%
+          ),
+          url("/assets/images/photo-1478760329108-5c3ed9d495a0.jpeg");
+      }
+
+      .slide--2 .slide__bg {
+        background-image:
+          linear-gradient(
+            135deg,
+            rgba(10, 10, 10, 0.15) 0%,
+            rgba(10, 10, 10, 0.35) 100%
+          ),
+          url("/assets/images/jack-b-VNNMDyZafA0-unsplash.jpg");
+      }
+
+      .slide--3 .slide__bg {
+        background-image:
+          linear-gradient(
+            135deg,
+            rgba(10, 10, 10, 0.15) 0%,
+            rgba(10, 10, 10, 0.35) 100%
+          ),
+          url("/assets/images/wes-hicks-6biN3uBw4Fg-unsplash.jpg");
+      }
+
+      /* ─── DARK OVERLAY (between bg and content) ─────────────── */
+      .slide__overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.1) 0%,
+          rgba(0, 0, 0, 0.38) 60%,
+          rgba(0, 0, 0, 0.55) 100%
+        );
+        z-index: 1;
+      }
+
+      /* ─── CONTENT LAYER ────────────────────────────────────── */
+      .slide__content {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: clamp(2rem, 6vw, 5rem) clamp(2rem, 8vw, 7rem);
+        padding-bottom: clamp(3rem, 8vh, 6rem);
+      }
+
+      /* slide number badge */
+      .slide__number {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(6rem, 18vw, 16rem);
+        line-height: 1;
+        color: rgba(255, 255, 255, 0.05);
+        position: absolute;
+        right: clamp(1rem, 4vw, 4rem);
+        bottom: clamp(1rem, 4vh, 3rem);
+        letter-spacing: -0.02em;
+        user-select: none;
+        z-index: 1;
+      }
+
+      /* ─── TITLE ────────────────────────────────────────────── */
+      .slide__title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(2.8rem, 6vw, 5.5rem);
+        line-height: 0.95;
+        letter-spacing: 0.02em;
+        color: #fff;
+        margin-bottom: 1rem;
+        /* entrance: start above, exit: go below */
+        transform: translateY(-60px);
+        opacity: 0;
+        will-change: transform, opacity;
+      }
+
+      .slide--1 .slide__title {
+        color: var(--accent-1);
+      }
+      .slide--2 .slide__title {
+        color: var(--accent-2);
+      }
+      .slide--3 .slide__title {
+        color: var(--accent-3);
+      }
+
+      /* ─── PARAGRAPH ────────────────────────────────────────── */
+      .slide__para {
+        font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+        font-weight: 300;
+        line-height: 1.75;
+        color: rgba(255, 255, 255, 0.75);
+        max-width: 520px;
+        margin-bottom: 2.2rem;
+        transform: translateY(-40px);
+        opacity: 0;
+        will-change: transform, opacity;
+      }
+
+      /* ─── BUTTON ────────────────────────────────────────────── */
+      .slide__btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #0a0a0a;
+        background: #fff;
+        border: none;
+        padding: 0.9rem 2rem;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transform: translateX(-80px);
+        opacity: 0;
+        will-change: transform, opacity;
+        align-self: flex-start;
+        transition:
+          background 0.3s ease,
+          color 0.3s ease;
+      }
+
+      .slide--1 .slide__btn {
+        background: var(--accent-1);
+      }
+      .slide--2 .slide__btn {
+        background: var(--accent-2);
+        color: #fff;
+      }
+      .slide--3 .slide__btn {
+        background: var(--accent-3);
+      }
+
+      .slide__btn::after {
+        content: "→";
+        font-size: 1rem;
+        transition: transform 0.3s var(--ease-out);
+      }
+
+      .slide__btn:hover::after {
+        transform: translateX(5px);
+      }
+
+      /* ─── PROGRESS DOTS ─────────────────────────────────────── */
+      #progress-dots {
+        position: fixed;
+        right: 2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        transition:
+          transform 0.4s var(--ease-out),
+          background 0.4s ease;
+        cursor: pointer;
+      }
+
+      .dot.active {
+        background: #fff;
+        transform: scale(1.5);
+      }
+
+      /* ─── SLIDE COUNTER ─────────────────────────────────────── */
+      #slide-counter {
+        position: fixed;
+        left: 2rem;
+        bottom: 2rem;
+        z-index: 100;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 1rem;
+        letter-spacing: 0.1em;
+        color: rgba(255, 255, 255, 0.35);
+        display: none;
+      }
+
+      #slide-counter span {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 1.5rem;
+      }
+
+      /* ─── SCROLL PROGRESS BAR ───────────────────────────────── */
+      #progress-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        width: 0%;
+        background: linear-gradient(
+          90deg,
+          var(--accent-1),
+          var(--accent-2),
+          var(--accent-3)
+        );
+        z-index: 200;
+        transition: width 0.1s linear;
+      }
+
+      /* ─── FOOTER ─────────────────────────────────────────────── */
+      .site-footer {
+        background: #0a0a0a;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 2.5rem clamp(2rem, 8vw, 7rem);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1.2rem;
+      }
+
+      .footer-author {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+
+      .footer-name {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 1.8rem;
+        letter-spacing: 0.08em;
+        color: #934ecd;
+      }
+
+      .footer-tagline {
+        font-size: 0.75rem;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.3);
+        letter-spacing: 0.05em;
+      }
+
+      .footer-links {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .footer-links a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 400;
+        letter-spacing: 0.06em;
+        color: rgba(255, 255, 255, 0.45);
+        text-decoration: none;
+        transition: color 0.25s ease;
+      }
+
+      .footer-links a:hover {
+        color: #fff;
+      }
+
+      .footer-links a svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+        flex-shrink: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- PROGRESS BAR -->
+    <div id="progress-bar"></div>
+
+    <!-- PROGRESS DOTS -->
+    <div id="progress-dots">
+      <div class="dot active" data-slide="0"></div>
+      <div class="dot" data-slide="1"></div>
+      <div class="dot" data-slide="2"></div>
+    </div>
+
+    <!-- SLIDE COUNTER -->
+    <div id="slide-counter"><span id="counter-current">01</span> / 03</div>
+
+    <!-- ── INTRO ──────────────────────────────────────────────── -->
+    <section class="intro">
+      <h1 class="intro-label">Parallax<br />Scroll</h1>
+      <p>
+        Three pinned scenes. Flash entrances. Directional text animations. Pure
+        HTML, CSS &amp; GSAP.
+      </p>
+
+      <div class="intro-author">
+        <span class="intro-author__by">by</span>
+        <span class="intro-author__name">Malaka Sandakal</span>
+        <div class="intro-author__links">
+          <a
+            href="https://github.com/malakasandakalw"
+            target="_blank"
+            rel="noopener"
+            title="GitHub"
+          >
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M12 0C5.37 0 0 5.37 0 12c0 5.303 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.468-2.381 1.235-3.221-.123-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.3 1.23a11.52 11.52 0 0 1 3.003-.404c1.02.005 2.047.138 3.006.404 2.29-1.552 3.296-1.23 3.296-1.23.654 1.652.242 2.873.12 3.176.77.84 1.233 1.911 1.233 3.221 0 4.61-2.807 5.625-5.479 5.921.43.372.814 1.103.814 2.222 0 1.606-.015 2.898-.015 3.293 0 .322.216.694.825.576C20.565 21.796 24 17.3 24 12c0-6.63-5.37-12-12-12z"
+              />
+            </svg>
+          </a>
+          <a
+            href="https://www.linkedin.com/in/malakasandakal/"
+            target="_blank"
+            rel="noopener"
+            title="LinkedIn"
+          >
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M20.447 20.452H16.89v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a1.982 1.982 0 0 1-1.98-1.98c0-1.093.887-1.98 1.98-1.98 1.094 0 1.98.887 1.98 1.98a1.982 1.982 0 0 1-1.98 1.98zm1.957 13.019H3.379V9h3.915v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+              />
+            </svg>
+          </a>
+          <a href="mailto:malakasandakalw@gmail.com" title="Email">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-.006.003-.012.003-.018l6.546 4.908.358.269L12 14.4l5.093-3.784.358-.269 6.546-4.908c0 .006.003.012.003.018z"
+              />
+              <path
+                d="M23.633 4.51 12 13.188.367 4.51A1.636 1.636 0 0 1 1.636 3.818h20.728c.684 0 1.267.419 1.269 1.044v-.352z"
+              />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="scroll-hint">
+        <div class="arrow"></div>
+        <span>Scroll to begin</span>
+      </div>
+    </section>
+
+    <!-- ── PARALLAX WRAPPER ───────────────────────────────────── -->
+    <div id="parallax-wrapper">
+      <div id="parallax-stage">
+        <!-- SLIDE 1 -->
+        <div class="slide slide--1" id="slide-1">
+          <div class="slide__bg"></div>
+          <div class="slide__overlay"></div>
+          <div class="slide__number">01</div>
+          <div class="slide__content">
+            <h2 class="slide__title">Into the<br />Unknown</h2>
+            <p class="slide__para">
+              Every great journey begins with a single step into the dark. The
+              light you carry within is the only map you will ever need to find
+              your way through.
+            </p>
+            <button class="slide__btn">Explore Now</button>
+          </div>
+        </div>
+
+        <!-- SLIDE 2 -->
+        <div class="slide slide--2" id="slide-2">
+          <div class="slide__bg"></div>
+          <div class="slide__overlay"></div>
+          <div class="slide__number">02</div>
+          <div class="slide__content">
+            <h2 class="slide__title">Beyond the<br />Horizon</h2>
+            <p class="slide__para">
+              Space is not empty — it hums with the ancient frequencies of a
+              universe still in the act of becoming. Look up and find yourself
+              looking inward.
+            </p>
+            <button class="slide__btn">Discover More</button>
+          </div>
+        </div>
+
+        <!-- SLIDE 3 -->
+        <div class="slide slide--3" id="slide-3">
+          <div class="slide__bg"></div>
+          <div class="slide__overlay"></div>
+          <div class="slide__number">03</div>
+          <div class="slide__content">
+            <h2 class="slide__title">Where Night<br />Blooms</h2>
+            <p class="slide__para">
+              In the stillness of midnight the world exhales. Stars do not
+              compete with each other — they simply shine, each in its own
+              appointed place and time.
+            </p>
+            <button class="slide__btn">Begin Journey</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ── END PARALLAX WRAPPER ──────────────────────────────── -->
+
+    <!-- ── OUTRO ──────────────────────────────────────────────── -->
+    <section class="outro">
+      <h2 class="intro-label">The End<br />of the<br />Scroll</h2>
+      <p
+        style="
+          color: rgba(255, 255, 255, 0.4);
+          max-width: 380px;
+          line-height: 1.7;
+        "
+      >
+        Built with pure HTML, CSS &amp; GSAP ScrollTrigger. No frameworks. No
+        fuss. Just scroll.
+      </p>
+    </section>
+
+    <!-- ── FOOTER ───────────────────────────────────────────────── -->
+    <footer class="site-footer">
+      <div class="footer-author">
+        <span class="footer-name">Malaka Sandakal</span>
+        <span class="footer-tagline">Made with curiosity &amp; craft</span>
+      </div>
+      <nav class="footer-links">
+        <a
+          href="https://github.com/malakasandakalw"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M12 0C5.37 0 0 5.37 0 12c0 5.303 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.468-2.381 1.235-3.221-.123-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.3 1.23a11.52 11.52 0 0 1 3.003-.404c1.02.005 2.047.138 3.006.404 2.29-1.552 3.296-1.23 3.296-1.23.654 1.652.242 2.873.12 3.176.77.84 1.233 1.911 1.233 3.221 0 4.61-2.807 5.625-5.479 5.921.43.372.814 1.103.814 2.222 0 1.606-.015 2.898-.015 3.293 0 .322.216.694.825.576C20.565 21.796 24 17.3 24 12c0-6.63-5.37-12-12-12z"
+            />
+          </svg>
+          GitHub
+        </a>
+        <a
+          href="https://www.linkedin.com/in/malakasandakal/"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M20.447 20.452H16.89v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a1.982 1.982 0 0 1-1.98-1.98c0-1.093.887-1.98 1.98-1.98 1.094 0 1.98.887 1.98 1.98a1.982 1.982 0 0 1-1.98 1.98zm1.957 13.019H3.379V9h3.915v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+            />
+          </svg>
+          LinkedIn
+        </a>
+        <a href="mailto:malakasandakalw@gmail.com">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-.006.003-.012.003-.018l6.546 4.908.358.269L12 14.4l5.093-3.784.358-.269 6.546-4.908c0 .006.003.012.003.018z"
+            />
+            <path
+              d="M23.633 4.51 12 13.188.367 4.51A1.636 1.636 0 0 1 1.636 3.818h20.728c.684 0 1.267.419 1.269 1.044v-.352z"
+            />
+          </svg>
+          Email
+        </a>
+      </nav>
+    </footer>
+
+    <script>
+      gsap.registerPlugin(ScrollTrigger);
+
+      // ─── Lenis smooth scroll ───────────────────────────────────
+      const lenis = new Lenis({
+        duration: 1.4,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+      });
+
+      // Drive Lenis through GSAP's ticker so ScrollTrigger stays in sync
+      gsap.ticker.add((time) => lenis.raf(time * 1000));
+      gsap.ticker.lagSmoothing(0);
+
+      // ─── Elements ──────────────────────────────────────────────
+      const wrapper = document.getElementById("parallax-wrapper");
+      const stage = document.getElementById("parallax-stage");
+      const slides = gsap.utils.toArray(".slide");
+      const dots = gsap.utils.toArray(".dot");
+      const counter = document.getElementById("slide-counter");
+      const counterEl = document.getElementById("counter-current");
+      const progressBar = document.getElementById("progress-bar");
+
+      const SLIDE_COUNT = slides.length;
+      let currentSlide = -1; // track which slide is "active"
+
+      // ─── Helpers ───────────────────────────────────────────────
+      function pad(n) {
+        return String(n + 1).padStart(2, "0");
+      }
+
+      function getElements(slide) {
+        return {
+          bg: slide.querySelector(".slide__bg"),
+          title: slide.querySelector(".slide__title"),
+          para: slide.querySelector(".slide__para"),
+          btn: slide.querySelector(".slide__btn"),
+        };
+      }
+
+      // ─── Idle thunder timer ───────────────────────────────────
+      // Fires a random single flash while user sits on a slide
+      let idleTimer = null;
+
+      function startIdleThunder(slide) {
+        stopIdleThunder();
+        const bg = slide.querySelector(".slide__bg");
+
+        function scheduleNext() {
+          // random delay between 3s and 8s
+          const delay = 3000 + Math.random() * 5000;
+          idleTimer = setTimeout(() => {
+            // only fire if bg is fully visible (not mid-transition)
+            bg.classList.remove("anim-idle-flash");
+            void bg.offsetWidth; // force reflow
+            bg.classList.add("anim-idle-flash");
+            // remove class after animation so it can re-trigger
+            setTimeout(() => bg.classList.remove("anim-idle-flash"), 1300);
+            scheduleNext();
+          }, delay);
+        }
+
+        scheduleNext();
+      }
+
+      function stopIdleThunder() {
+        if (idleTimer) {
+          clearTimeout(idleTimer);
+          idleTimer = null;
+        }
+      }
+
+      // ─── ENTER animation ──────────────────────────────────────
+      // direction: 1 = scrolling down (entering from top)
+      //           -1 = scrolling up  (entering from bottom)
+      function enterSlide(slide, direction) {
+        const { bg, title, para, btn } = getElements(slide);
+
+        gsap.killTweensOf([bg, title, para, btn]);
+        stopIdleThunder();
+
+        // 1. Background — fade in with a gentle scale-down
+        bg.classList.remove("anim-thunder", "anim-idle-flash");
+        void bg.offsetWidth;
+        gsap.fromTo(
+          bg,
+          { opacity: 0, scale: 1.14 },
+          { opacity: 1, scale: 1.08, duration: 0.8, ease: "power2.out" },
+        );
+
+        // 2. Thunder fires after bg has faded fully in
+        setTimeout(() => {
+          bg.classList.remove("anim-thunder");
+          void bg.offsetWidth;
+          bg.classList.add("anim-thunder");
+          // once thunder is done, start idle loop
+          setTimeout(() => startIdleThunder(slide), 2100);
+        }, 820);
+
+        // 3. Title + Para — from above (down ↓ entering)
+        const textFrom = direction === 1 ? -70 : 70;
+
+        gsap.fromTo(
+          title,
+          { y: textFrom, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.75, ease: "power3.out", delay: 0.15 },
+        );
+        gsap.fromTo(
+          para,
+          { y: textFrom * 0.7, opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.75, ease: "power3.out", delay: 0.25 },
+        );
+
+        // 4. Button — from left →
+        gsap.fromTo(
+          btn,
+          { x: -90, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.7, ease: "power3.out", delay: 0.38 },
+        );
+      }
+
+      // ─── EXIT animation ───────────────────────────────────────
+      // direction: 1 = slide exiting upward (scroll down)
+      //           -1 = slide exiting downward (scroll up)
+      function exitSlide(slide, direction) {
+        const { bg, title, para, btn } = getElements(slide);
+
+        gsap.killTweensOf([bg, title, para, btn]);
+        stopIdleThunder();
+
+        // 1. Background — fade out with a slight scale-up (receding feel)
+        bg.classList.remove("anim-thunder", "anim-idle-flash");
+        gsap.to(bg, {
+          opacity: 0,
+          scale: 1.12,
+          duration: 0.5,
+          ease: "power2.in",
+        });
+
+        // 2. Title + Para exit
+        const textTo = direction === 1 ? 60 : -60;
+        gsap.to(title, {
+          y: textTo,
+          opacity: 0,
+          duration: 0.5,
+          ease: "power2.in",
+        });
+        gsap.to(para, {
+          y: textTo * 0.7,
+          opacity: 0,
+          duration: 0.5,
+          ease: "power2.in",
+          delay: 0.05,
+        });
+
+        // 3. Button — exit to right →
+        gsap.to(btn, { x: 90, opacity: 0, duration: 0.45, ease: "power2.in" });
+      }
+
+      // ─── Update UI ─────────────────────────────────────────────
+      function updateUI(index) {
+        dots.forEach((d, i) => d.classList.toggle("active", i === index));
+        counterEl.textContent = pad(index);
+      }
+
+      // ─── Initial reset — all slides hidden ─────────────────────
+      slides.forEach((slide) => {
+        const { bg, title, para, btn } = getElements(slide);
+        gsap.set(bg, { opacity: 0, scale: 1.08 });
+        gsap.set(title, { y: -70, opacity: 0 });
+        gsap.set(para, { y: -50, opacity: 0 });
+        gsap.set(btn, { x: -90, opacity: 0 });
+      });
+
+      // ─── SCROLL LOGIC ─────────────────────────────────────────
+      // The wrapper is 300vh. We map scroll progress to 3 segments.
+      // Each segment = 1/3 of the total scrollable distance.
+
+      ScrollTrigger.create({
+        trigger: wrapper,
+        start: "top top",
+        end: "bottom bottom",
+        pin: false, // stage is already sticky via CSS
+        onUpdate(self) {
+          const progress = self.progress; // 0 → 1
+          const rawIndex = progress * SLIDE_COUNT; // 0 → 3
+          const slideIndex = Math.min(Math.floor(rawIndex), SLIDE_COUNT - 1);
+          const direction = self.direction; // 1 down, -1 up
+
+          // progress bar
+          progressBar.style.width = progress * 100 + "%";
+
+          if (slideIndex !== currentSlide) {
+            // Exit old slide
+            if (currentSlide >= 0 && currentSlide < SLIDE_COUNT) {
+              exitSlide(slides[currentSlide], direction);
+            }
+
+            // Enter new slide
+            currentSlide = slideIndex;
+            enterSlide(slides[currentSlide], direction);
+            updateUI(currentSlide);
+
+            // show counter once parallax starts
+            counter.style.display = "block";
+          }
+        },
+        onLeaveBack() {
+          // Scrolled above the section entirely
+          if (currentSlide >= 0) {
+            exitSlide(slides[currentSlide], -1);
+            stopIdleThunder();
+            currentSlide = -1;
+            counter.style.display = "none";
+            dots.forEach((d) => d.classList.remove("active"));
+            dots[0].classList.add("active");
+            progressBar.style.width = "0%";
+          }
+        },
+        onLeave() {
+          // Scrolled below the section
+          counter.style.display = "none";
+        },
+        onEnter() {
+          counter.style.display = "block";
+        },
+        onEnterBack() {
+          counter.style.display = "block";
+        },
+      });
+
+      // ─── DOT NAV ───────────────────────────────────────────────
+      dots.forEach((dot, i) => {
+        dot.addEventListener("click", () => {
+          const wrapperTop =
+            wrapper.getBoundingClientRect().top + window.scrollY;
+          const wrapperHeight = wrapper.offsetHeight;
+          const scrollTarget =
+            wrapperTop + (i / SLIDE_COUNT) * wrapperHeight + 10;
+          lenis.scrollTo(scrollTarget, { duration: 1.6 });
+        });
+      });
+
+      // ─── Refresh ScrollTrigger after fonts/images load ─────────
+      window.addEventListener("load", () => ScrollTrigger.refresh());
+    </script>
+  </body>
+</html>
